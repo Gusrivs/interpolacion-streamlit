@@ -1,4 +1,23 @@
 import streamlit as st
 
-st.set_page_config(page_title='Multipage Aplication')
-st.title('Homepage')
+st.set_page_config(page_title='Interpolacion 2026')
+st.title("Interpolación")
+st.write("Bienvenidos, en esta pagina podran realizar de manera eficiente y satisfactoria problemas que requieron uso de interpolación")
+st.image("images/InLin.png", caption="Interpolación Lineal", width=400)
+st.write("En esta pagina se encuentran los siguientes metodos de interpolación:")
+st.markdown("""
+### Interpolación Polinómica
+- Lagrange
+- Newton
+  - Hacia Adelante
+  - Hacia Atrás
+- Diferencias Lineales
+  - Stirling
+  - Bessel
+- Polinomio de Hermite
+
+### Interpolación por Tramos
+- Spline Lineal
+- Spline Cuadrática
+- Spline Cúbico
+""")
