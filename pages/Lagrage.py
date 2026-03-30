@@ -1,11 +1,22 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from pages.Utilidades.Inputs import ingresar_puntos
+
 st.title("Interpolación de Lagrange")
 st.write("Ingrese los puntos:")
 
-x, y = ingresar_puntos()
+n = st.number_input("Cantidad de puntos", min_value=2, step=1, value=2)
+
+x = []
+y = []
+for i in range(n):
+    col1, col2 = st.columns(2)
+    with col1:
+        xi = st.number_input(f"x{i}", key=f"x{i}")
+    with col2:
+        yi = st.number_input(f"y{i}", key=f"y{i}")
+    x.append(xi)
+    y.append(yi)
 
 def lagrange_coeficientes(x, y):
     return np.polyfit(x, y, len(x) - 1)
@@ -37,15 +48,19 @@ if "coefs" in st.session_state:
     coefs = st.session_state["coefs"]
     x_guardado = st.session_state["x"]
     y_guardado = st.session_state["y"]
+
     st.subheader("Polinomio de colocación")
     st.code(formato_polinomio(coefs))
+
     x_vals = np.linspace(min(x_guardado), max(x_guardado), 100)
     y_vals = np.polyval(coefs, x_vals)
+
     st.subheader("Evaluar el polinomio")
     xp = st.number_input("Valor a interpolar (x)")
     if st.button("Evaluar"):
         resultado = np.polyval(coefs, xp)
         st.success(f"P({xp}) = {resultado}")
+
         fig, ax = plt.subplots()
         ax.plot(x_vals, y_vals)
         ax.scatter(x_guardado, y_guardado)
