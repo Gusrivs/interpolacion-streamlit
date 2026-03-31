@@ -1,22 +1,35 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 st.title("Interpolación de Lagrange")
 st.write("Ingrese los puntos:")
 
-n = st.number_input("Cantidad de puntos", min_value=2, step=1, value=2)
-
 x = []
 y = []
-for i in range(n):
-    col1, col2 = st.columns(2)
-    with col1:
-        xi = st.number_input(f"x{i}", key=f"x{i}")
-    with col2:
-        yi = st.number_input(f"y{i}", key=f"y{i}")
-    x.append(xi)
-    y.append(yi)
+entrada = st.selectbox("Como desea agregar los datos?", ("Manualmente", "Importar xlsx, xls"), index=None)
+if (entrada == "Manualmente"):
+    st.write("Ingrese:")
+    n = int(st.number_input("Cantidad de puntos", min_value=2, step=1, value=2))
+    for i in range(n):
+        col1, col2 = st.columns(2)
+        with col1:
+            xi = st.number_input(f"x{i}", key=f"x{i}")
+        with col2:
+            yi = st.number_input(f"y{i}", key=f"y{i}")
+        x.append(float(xi))
+        y.append(float(yi))
+if (entrada == "Importar xlsx, xls"):
+    archivo = st.file_uploader("Cargar puntos desde Excel", type=["xlsx", "xls"])
+    st.success("El archivo debe contener una tabla de dos columnas con encabezados x, y respectivamente")
+    if archivo:
+        df = pd.read_excel(archivo)
+        x = df["x"].tolist()
+        y = df["y"].tolist()
+        n = len(x)
+        st.success(f"{n} puntos cargados correctamente")
+        st.dataframe(df, use_container_width=True)
 
 def lagrange_coeficientes(x, y):
     return np.polyfit(x, y, len(x) - 1)

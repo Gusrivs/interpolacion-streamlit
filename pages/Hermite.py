@@ -5,22 +5,37 @@ import pandas as pd
 
 st.title("Interpolación de Hermite")
 st.write("Ingrese los puntos (valor de la función y su derivada):")
-n = int(st.number_input("Cantidad de puntos", min_value=2, step=1, value=2))
 x = []
 y = []
 dy = []
-for i in range(n):
-    st.markdown(f"**Punto {i}**")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        xi = st.number_input(f"x{i}", key=f"x{i}")
-    with col2:
-        yi = st.number_input(f"f(x{i})", key=f"y{i}")
-    with col3:
-        dyi = st.number_input(f"f'(x{i})", key=f"dy{i}")
-    x.append(float(xi))
-    y.append(float(yi))
-    dy.append(float(dyi))
+
+modo = st.selectbox("Modo de ingreso", ["Manual", "Cargar desde Excel"], index=None)
+
+if modo == "Cargar desde Excel":
+    archivo = st.file_uploader("Subir archivo Excel", type=["xlsx", "xls"])
+    st.caption("El archivo debe tener columnas nombradas: x, y, dy")
+    if archivo:
+        df = pd.read_excel(archivo)
+        x  = df["x"].tolist()
+        y  = df["y"].tolist()
+        dy = df["dy"].tolist()
+        n  = len(x)
+        st.success(f"{n} puntos cargados correctamente")
+        st.dataframe(df, use_container_width=True)
+if modo == "Manual" :
+    n = int(st.number_input("Cantidad de puntos", min_value=2, step=1, value=2))
+    for i in range(n):
+        st.markdown(f"**Punto {i}**")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            xi = st.number_input(f"x{i}", key=f"x{i}")
+        with col2:
+            yi = st.number_input(f"f(x{i})", key=f"y{i}")
+        with col3:
+            dyi = st.number_input(f"f'(x{i})", key=f"dy{i}")
+        x.append(float(xi))
+        y.append(float(yi))
+        dy.append(float(dyi))
 
 def tabla_hermite(x, y, dy):
     n = len(x)
