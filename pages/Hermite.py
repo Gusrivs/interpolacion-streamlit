@@ -2,9 +2,14 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+st.set_page_config(page_title="Polinomio de Hermite", page_icon="images/Logo.ico", layout="centered")
 
-st.title("Interpolación de Hermite")
+st.title("Interpolación por polinomio de Hermite")
 st.write("Ingrese los puntos (valor de la función y su derivada):")
+
+if "reset" not in st.session_state:
+    st.session_state["reset"] = 0
+
 x = []
 y = []
 dy = []
@@ -12,7 +17,7 @@ dy = []
 modo = st.selectbox("Modo de ingreso", ["Manual", "Cargar desde Excel"], index=None)
 
 if modo == "Cargar desde Excel":
-    archivo = st.file_uploader("Subir archivo Excel", type=["xlsx", "xls"])
+    archivo = st.file_uploader("Subir archivo Excel", type=["xlsx", "xls"], key=f"file_uploader_{st.session_state['reset']}")
     st.caption("El archivo debe tener columnas nombradas: x, y, dy")
     if archivo:
         df = pd.read_excel(archivo)
@@ -28,14 +33,15 @@ if modo == "Manual" :
         st.markdown(f"**Punto {i}**")
         col1, col2, col3 = st.columns(3)
         with col1:
-            xi = st.number_input(f"x{i}", key=f"x{i}")
+            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
         with col2:
-            yi = st.number_input(f"f(x{i})", key=f"y{i}")
+            yi = st.number_input(f"f(x{i})", key=f"y{i}_{st.session_state['reset']}", value=0.0)
         with col3:
-            dyi = st.number_input(f"f'(x{i})", key=f"dy{i}")
+            dyi = st.number_input(f"f'(x{i})", key=f"dy{i}_{st.session_state['reset']}", value=0.0)
         x.append(float(xi))
         y.append(float(yi))
         dy.append(float(dyi))
+
 
 def tabla_hermite(x, y, dy):
     n = len(x)
@@ -47,13 +53,14 @@ def tabla_hermite(x, y, dy):
         z[2*i + 1]    = x[i]
         Q[2*i][0]     = y[i]
         Q[2*i + 1][0] = y[i]
-        Q[2*i + 1][1] = dy[i]  # derivada en nodo duplicado
+        Q[2*i + 1][1] = dy[i]
         if i > 0:
             Q[2*i][1] = (Q[2*i][0] - Q[2*i - 1][0]) / (z[2*i] - z[2*i - 1])
     for j in range(2, m):
         for i in range(j, m):
             Q[i][j] = (Q[i][j-1] - Q[i-1][j-1]) / (z[i] - z[i-j])
     return z, Q
+
 
 def evaluar_hermite(z, Q, xp):
     m = len(z)
@@ -64,6 +71,7 @@ def evaluar_hermite(z, Q, xp):
         producto *= (xp - z[i-1])
         resultado += coefs[i] * producto
     return resultado
+
 
 def formato_polinomio(z, Q, n_puntos):
     m = 2 * n_puntos
@@ -83,6 +91,7 @@ def formato_polinomio(z, Q, n_puntos):
             terminos.append(f"{signo}{c}{producto}")
     return "H(x) = " + " ".join(terminos) if terminos else "H(x) = 0"
 
+
 def construir_tabla_df(z, Q):
     m = len(z)
     col_names = ["i", "zᵢ", "f[zᵢ]"]
@@ -93,7 +102,6 @@ def construir_tabla_df(z, Q):
             col_names.append("f[zᵢ, zᵢ₊₁, zᵢ₊₂]")
         else:
             col_names.append(f"Orden {orden}")
-
     filas = []
     for i in range(m):
         fila = [i, round(z[i], 4), round(Q[i][0], 6)]
@@ -103,16 +111,23 @@ def construir_tabla_df(z, Q):
             else:
                 fila.append("")
         filas.append(fila)
-
     return pd.DataFrame(filas, columns=col_names)
 
+
 if st.button("Calcular"):
-    z, Q = tabla_hermite(x, y, dy)
-    st.session_state["z"] = z
-    st.session_state["Q"] = Q
-    st.session_state["x"] = x
-    st.session_state["y"] = y
-    st.session_state["n_puntos"] = n
+    # --- Validación: datos vacíos ---
+    if len(x) == 0:
+        st.error("⚠️ No hay datos ingresados")
+    elif len(set(x)) != len(x):
+        st.error("Todos los puntos deben tener x distintos.")
+    else:
+        z, Q = tabla_hermite(x, y, dy)
+        st.session_state["z"] = z
+        st.session_state["Q"] = Q
+        st.session_state["x"] = x
+        st.session_state["y"] = y
+        st.session_state["n_puntos"] = len(x)
+
 if "z" in st.session_state:
     z   = st.session_state["z"]
     Q   = st.session_state["Q"]
@@ -132,15 +147,12 @@ if "z" in st.session_state:
     st.subheader("Polinomio derivado H'(x)")
     m = 2 * n_p
     coefs_h = [Q[i][i] for i in range(m)]
-    # Expandir el polinomio de Newton a forma estándar usando poly1d
     poly = np.poly1d([coefs_h[0]])
     prod = np.poly1d([1.0])
     for i in range(1, m):
         prod = prod * np.poly1d([1, -z[i-1]])
         poly = poly + np.poly1d([coefs_h[i]]) * prod
-    # Derivar
     deriv = poly.deriv()
-    # Formatear
     grado = deriv.order
     terminos_d = []
     for exp in range(grado, -1, -1):
@@ -157,21 +169,36 @@ if "z" in st.session_state:
     polinomio_deriv = "H'(x) = " + " ".join(terminos_d) if terminos_d else "H'(x) = 0"
     st.code(polinomio_deriv)
 
+    # --- Evaluación con validación de rango ---
     st.subheader("Evaluar el polinomio")
+    x_min = min(x_g)
+    x_max = max(x_g)
+    st.caption(f"Rango válido de interpolación: [{x_min}, {x_max}]")
     xp = st.number_input("Valor a interpolar (x)")
 
     if st.button("Evaluar"):
-        resultado = evaluar_hermite(z, Q, xp)
-        st.success(f"H({xp}) = {resultado}")
+        if xp < x_min or xp > x_max:
+            st.error(f"⚠️ x = {xp} está fuera del rango [{x_min}, {x_max}]. ")
+        else:
+            resultado = evaluar_hermite(z, Q, xp)
+            st.success(f"H({xp}) = {resultado}")
 
-        x_vals = np.linspace(min(x_g), max(x_g), 200)
-        y_vals = [evaluar_hermite(z, Q, xi) for xi in x_vals]
+            x_vals = np.linspace(x_min, x_max, 200)
+            y_vals = [evaluar_hermite(z, Q, xi) for xi in x_vals]
 
-        fig, ax = plt.subplots()
-        ax.plot(x_vals, y_vals)
-        ax.scatter(x_g, y_g)
-        ax.scatter(xp, resultado)
-        ax.set_title("Polinomio de Interpolación (Hermite)")
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        st.pyplot(fig)
+            fig, ax = plt.subplots()
+            ax.plot(x_vals, y_vals)
+            ax.scatter(x_g, y_g)
+            ax.scatter(xp, resultado)
+            ax.set_title("Polinomio de Interpolación (Hermite)")
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            st.pyplot(fig)
+
+    st.divider()
+    if st.button("Limpiar"):
+        reset_val = st.session_state["reset"] + 1
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.session_state["reset"] = reset_val
+        st.rerun()

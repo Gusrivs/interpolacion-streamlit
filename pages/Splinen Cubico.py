@@ -2,17 +2,19 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
+st.set_page_config(page_title="Spline Cubico", page_icon="images/Logo.ico", layout="centered")
 st.title("Interpolación por Spline Cúbico")
 st.write("Ingrese los puntos para construir los splines cúbicos naturales:")
+
+if "reset" not in st.session_state:
+    st.session_state["reset"] = 0
 
 x = []
 y = []
 
 modo = st.selectbox("Modo de ingreso", ["Manual", "Cargar desde Excel"], index=None)
-
 if modo == "Cargar desde Excel":
-    archivo = st.file_uploader("Subir archivo Excel", type=["xlsx", "xls"])
+    archivo = st.file_uploader("Subir archivo Excel", type=["xlsx", "xls"], key=f"file_uploader_{st.session_state['reset']}")
     st.caption("El archivo debe tener columnas nombradas: x, y")
     if archivo:
         df = pd.read_excel(archivo)
@@ -23,14 +25,15 @@ if modo == "Cargar desde Excel":
         st.dataframe(df, use_container_width=True)
 
 if modo == "Manual":
-    n = int(st.number_input("Cantidad de puntos", min_value=3, step=1, value=3))
+    n = int(st.number_input("Cantidad de puntos", min_value=2, step=1, value=3,
+                            key=f"n_{st.session_state['reset']}"))
     for i in range(n):
         st.markdown(f"**Punto {i}**")
         col1, col2 = st.columns(2)
         with col1:
-            xi = st.number_input(f"x{i}", key=f"x{i}")
+            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
         with col2:
-            yi = st.number_input(f"f(x{i})", key=f"y{i}")
+            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
         x.append(float(xi))
         y.append(float(yi))
 
@@ -71,7 +74,7 @@ def spline_cubico_natural(x, y):
 
 def evaluar_spline(splines, xp):
     for (a, b, c, d, xi, xi1) in splines:
-        if xi <= xp <= xi1:
+        if min(xi, xi1) <= xp <= max(xi, xi1):
             t = xp - xi
             return a + b * t + c * t ** 2 + d * t ** 3
     return None
@@ -103,7 +106,9 @@ def construir_tabla_momentos(x, M):
 
 if st.button("Calcular"):
     if len(x) < 3:
-        st.error("Se necesitan al menos 3 puntos.")
+        st.error("⚠️ No hay datos ingresados.")
+    elif len(set(x)) != len(x):
+        st.error("Todos los puntos deben tener x distintos.")
     else:
         splines, M = spline_cubico_natural(x, y)
         st.session_state["splines_c"] = splines
@@ -149,3 +154,11 @@ if "splines_c" in st.session_state:
             st.pyplot(fig)
         else:
             st.error(f"El valor x={xp} está fuera del rango de interpolación [{min(x_g)}, {max(x_g)}].")
+
+    st.divider()
+    if st.button("Limpiar"):
+        reset_val = st.session_state["reset"] + 1
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.session_state["reset"] = reset_val
+        st.rerun()

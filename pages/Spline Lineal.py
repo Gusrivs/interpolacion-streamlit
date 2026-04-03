@@ -2,26 +2,40 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
+st.set_page_config(page_title="Spline Lineal", page_icon="images/Logo.ico", layout="centered")
 st.title("Interpolación por Spline Lineal")
 st.write("Ingrese los puntos:")
 
 if "reset" not in st.session_state:
     st.session_state["reset"] = 0
 
-n = int(st.number_input("Cantidad de puntos", min_value=2, step=1, value=3,
-                         key=f"n_{st.session_state['reset']}"))
-
 x = []
 y = []
-for i in range(n):
-    col1, col2 = st.columns(2)
-    with col1:
-        xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
-    with col2:
-        yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
-    x.append(float(xi))
-    y.append(float(yi))
+
+modo = st.selectbox("Modo de ingreso", ["Manual", "Cargar desde Excel"], index=None)
+if modo == "Cargar desde Excel":
+    archivo = st.file_uploader("Subir archivo Excel", type=["xlsx", "xls"], key=f"file_uploader_{st.session_state['reset']}")
+    st.caption("El archivo debe tener columnas nombradas: x, y")
+    if archivo:
+        df = pd.read_excel(archivo)
+        x = df["x"].tolist()
+        y = df["y"].tolist()
+        n = len(x)
+        st.success(f"{n} puntos cargados correctamente")
+        st.dataframe(df, use_container_width=True)
+
+if modo == "Manual":
+    n = int(st.number_input("Cantidad de puntos", min_value=2, step=1, value=3,
+                            key=f"n_{st.session_state['reset']}"))
+    for i in range(n):
+        st.markdown(f"**Punto {i}**")
+        col1, col2 = st.columns(2)
+        with col1:
+             xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
+        with col2:
+             yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
+        x.append(float(xi))
+        y.append(float(yi))
 
 def calcular_splines(x, y):
     tramos = []
@@ -33,13 +47,15 @@ def calcular_splines(x, y):
 
 def evaluar_spline(tramos, xp):
     for (x0, x1, a, b) in tramos:
-        if x0 <= xp <= x1:
+        if min(x0, x1) <= xp <= max(x0, x1):
             return a + b * (xp - x0)
     return None
 
 if st.button("Calcular"):
-    if len(set(x)) != len(x):
-        st.error("No puede haber dos puntos con el mismo valor de x.")
+    if len(x) < 3:
+        st.error("⚠️ No hay datos ingresados.")
+    elif len(set(x)) != len(x):
+        st.error("Todos los puntos deben tener x distintos.")
     else:
         tramos = calcular_splines(x, y)
         st.session_state["tramos"] = tramos
@@ -66,7 +82,10 @@ if "tramos" in st.session_state:
     if st.button("Evaluar"):
         resultado = evaluar_spline(tramos, xp)
         if resultado is None:
-            st.error(f"xₚ = {xp} está fuera del rango [{x_g[0]}, {x_g[-1]}].")
+            if x_g[0] < x_g[-1]:
+                st.error(f"xₚ = {xp} está fuera del rango [{x_g[0]}, {x_g[-1]}].")
+            else:
+                st.error(f"xₚ = {xp} está fuera del rango [{x_g[-1]}, {x_g[0]}].")
         else:
             st.success(f"S({xp}) = {resultado:.6f}")
 

@@ -1,1 +1,0 @@
-# Paquete de utilidades compartidas para el proyecto de análisis numérico

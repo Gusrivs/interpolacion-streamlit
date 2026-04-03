@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import math
+st.set_page_config(page_title="Diferencias Finitas", page_icon="images/Logo.ico", layout="centered")
 
 st.title("Interpolación por Diferencias Finitas")
 st.write("Ingrese los parámetros (puntos equiespaciados):")
