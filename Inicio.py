@@ -14,7 +14,7 @@ with st.form("formulario"):
     st.subheader("Cuéntanos sobre tus datos")
 
     conoce_derivada = st.radio(
-        "¿Conocés el valor de la derivada en los puntos?",
+        "¿Conoces el valor de la derivada en los puntos?",
         ["Sí", "No"],
         horizontal=True
     )
@@ -26,13 +26,13 @@ with st.form("formulario"):
     )
 
     quiere_suavidad = st.radio(
-        "¿Necesitás que la curva sea suave entre cada par de puntos (sin quiebres)?",
+        "¿Necesitas que la curva sea suave entre cada par de puntos (sin quiebres)?",
         ["Sí", "No"],
         horizontal=True
     )
 
     cantidad_puntos = st.radio(
-        "¿Cuántos puntos tenés aproximadamente?",
+        "¿Cuántos puntos tienes aproximadamente?",
         ["Pocos (2 - 5)", "Varios (6 o más)"],
         horizontal=True
     )
@@ -46,7 +46,7 @@ if enviado:
 
     if conoce_derivada == "Sí":
         metodo     = "Hermite"
-        descripcion = ("Conocés tanto f(x) como f'(x) en cada punto, "
+        descripcion = ("Conoces tanto f(x) como f'(x) en cada punto, "
                        "lo que permite a Hermite aproximar con mayor precisión "
                        "respetando la pendiente en cada nodo.")
         pagina      = "pages/Hermite.py"
@@ -54,10 +54,10 @@ if enviado:
 
     elif quiere_suavidad == "Sí":
         metodo      = "Spline"
-        descripcion = ("Necesitás suavidad entre tramos, los Splines dividen "
+        descripcion = ("Necesitas suavidad entre tramos, los Splines dividen "
                        "el intervalo en segmentos y garantizan continuidad "
-                       "en la curva y sus derivadas. Podés elegir entre Lineal, "
-                       "Cuadrático o Cúbico según el grado de precisión que necesités.")
+                       "en la curva y sus derivadas. Puedes elegir entre Lineal, "
+                       "Cuadrático o Cúbico según el grado de precisión que necesites.")
         pagina      = "pages/Spline Lineal.py"
         emoji       = "🟠"
 
@@ -80,7 +80,7 @@ if enviado:
         else:
             metodo      = "Newton"
             descripcion = ("Con varios puntos, Newton es más eficiente que Lagrange "
-                           "gracias a las diferencias divididas: podés agregar puntos "
+                           "gracias a las diferencias divididas: puedes agregar puntos "
                            "sin recalcular todo el polinomio.")
             pagina      = "pages/Newton.py"
             emoji       = "🔵"
