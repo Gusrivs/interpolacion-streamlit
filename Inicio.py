@@ -3,6 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="Interpolacion 2026", page_icon="images/Logo.ico", layout="centered")
 
 st.title("Métodos de Interpolación")
+st.success("Nota: El metodo de Lagrage se encuentra actualmente en desarrollo de implementación de funciones predeterminadas para luego implementarse en el resto de metodos, es posible presente uno que otro error, sin embargo, pueden probarlo y reportar cualquier error que encuentren para su pronta solución.")
 st.image("images/Portada.png", width=550)
 
 

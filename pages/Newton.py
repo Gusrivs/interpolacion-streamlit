@@ -119,13 +119,10 @@ if "coefs" in st.session_state:
     x_max = max(x_g)
 
     st.subheader("Evaluar el polinomio")
-    st.caption(f"Rango válido de interpolación: [{x_min}, {x_max}]")
+    st.caption(f"Rango con mayor precisión de interpolación: [{x_min}, {x_max}]")
     xp = st.number_input("Valor a interpolar (x)")
 
     if st.button("Evaluar"):
-        if xp < x_min or xp > x_max:
-            st.error(f"⚠️ x = {xp} está fuera del rango [{x_min}, {x_max}]. ")
-        else:
             resultado = evaluar_newton(x_g, coefs, xp)
             st.success(f"P({xp}) = {resultado}")
 

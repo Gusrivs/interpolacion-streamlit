@@ -2,6 +2,8 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from Utilidades.funcion import entrada_funcion_con_teclado
+
 st.set_page_config(page_title="Lagrange", page_icon="images/Logo.ico", layout="centered")
 
 st.title("Interpolación de Lagrange")
@@ -10,10 +12,12 @@ st.write("Ingrese los puntos:")
 if "reset" not in st.session_state:
     st.session_state["reset"] = 0
 
+
 x = []
 y = []
+coefs = None
 
-modo = st.selectbox("Modo de ingreso", ["Manual", "Cargar desde Excel"], index=None)
+modo = st.selectbox("Modo de ingreso", ["Manual", "Cargar desde Excel", "Función"], index=None)
 if modo == "Cargar desde Excel":
     archivo = st.file_uploader("Subir archivo Excel", type=["xlsx", "xls"], key=f"file_uploader_{st.session_state['reset']}")
     st.caption("El archivo debe tener columnas nombradas: x, y")
@@ -37,7 +41,14 @@ if modo == "Manual":
             yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
         x.append(float(xi))
         y.append(float(yi))
-
+if modo == "Función":
+    datos = entrada_funcion_con_teclado(key_prefix="lagrange")
+    if datos["valida"]:
+        x = datos["x_vals"]
+        y = datos["y_vals"]
+    else:
+        # Si no es válida, nos aseguramos de que x e y sean listas vacías
+        x, y = [], []
 
 def lagrange_coeficientes(x, y):
     return np.polyfit(x, y, len(x) - 1)
@@ -86,13 +97,10 @@ if "coefs" in st.session_state:
     y_vals = np.polyval(coefs, x_vals)
 
     st.subheader("Evaluar el polinomio")
-    st.caption(f"Rango válido de interpolación: [{x_min}, {x_max}]")
+    st.caption(f"Rango de interpolación con mayor grado de precisión: [{x_min}, {x_max}]")
     xp = st.number_input("Valor a interpolar (x)")
 
     if st.button("Evaluar"):
-        if xp < x_min or xp > x_max:
-            st.error(f"⚠️ x = {xp} está fuera del rango [{x_min}, {x_max}]. ")
-        else:
             resultado = np.polyval(coefs, xp)
             st.success(f"P({xp}) = {resultado}")
 
