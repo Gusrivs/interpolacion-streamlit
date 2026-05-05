@@ -104,7 +104,7 @@ if enviado:
     with col3:
         st.page_link("pages/Spline Lineal.py",       label="📒 Spline Lineal")
         st.page_link("pages/Spline Cuadratica.py",   label="📒 Spline Cuadrático")
-        st.page_link("pages/Splinen Cubico.py",      label="📒 Spline Cúbico")
+        st.page_link("pages/Spline Cubico.py",      label="📒 Spline Cúbico")
 
     st.divider()
     st.markdown("<style>div[data-testid='stPageLink'] * {font-size: 20px; font-weight: bold}</style>", unsafe_allow_html=True)
