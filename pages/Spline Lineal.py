@@ -18,6 +18,7 @@ if modo == "Cargar desde Excel":
     st.caption("El archivo debe tener columnas nombradas: x, y")
     if archivo:
         df = pd.read_excel(archivo)
+        df = df.sort_values("x").reset_index(drop=True)
         x = df["x"].tolist()
         y = df["y"].tolist()
         n = len(x)
@@ -31,9 +32,9 @@ if modo == "Manual":
         st.markdown(f"**Punto {i}**")
         col1, col2 = st.columns(2)
         with col1:
-             xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
+            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
         with col2:
-             yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
+            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
         x.append(float(xi))
         y.append(float(yi))
 
@@ -57,10 +58,13 @@ if st.button("Calcular"):
     elif len(set(x)) != len(x):
         st.error("Todos los puntos deben tener x distintos.")
     else:
-        tramos = calcular_splines(x, y)
+        pares = sorted(zip(x, y), key=lambda p: p[0])
+        x_ord = [p[0] for p in pares]
+        y_ord = [p[1] for p in pares]
+        tramos = calcular_splines(x_ord, y_ord)
         st.session_state["tramos"] = tramos
-        st.session_state["x"] = x
-        st.session_state["y"] = y
+        st.session_state["x"] = x_ord
+        st.session_state["y"] = y_ord
 
 if "tramos" in st.session_state:
     tramos = st.session_state["tramos"]
