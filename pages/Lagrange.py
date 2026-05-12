@@ -36,9 +36,9 @@ if modo == "Manual":
         st.markdown(f"**Punto {i}**")
         col1, col2 = st.columns(2)
         with col1:
-            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
+            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0, step=1e-2, format="%.9f")
         with col2:
-            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
+            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0, step=1e-2, format="%.9f")
         x.append(float(xi))
         y.append(float(yi))
 if modo == "Función":
@@ -51,15 +51,23 @@ if modo == "Función":
         x, y = [], []
 
 def lagrange_coeficientes(x, y):
-    return np.polyfit(x, y, len(x) - 1)
+    n = len(x)
+    poly = np.poly1d([0.0])
+    for i in range(n):
+        li = np.poly1d([1.0])
+        for j in range(n):
+            if i != j:
+                li = li * np.poly1d([1.0, -x[j]]) / (x[i] - x[j])
+        poly = poly + y[i] * li
+    return poly.coeffs  # retorna igual que polyfit
 
 
-def formato_polinomio(coefs):
+def formato_polinomio(coefs, cifras=6):
     grado = len(coefs) - 1
     terminos = []
     for i, c in enumerate(coefs):
         exp = grado - i
-        c_r = round(c, 4)
+        c_r = float(f"{c:.{cifras}g}")  # ← cifras significativas, no decimales fijos
         if abs(c_r) < 1e-10:
             continue
         signo = "+" if c_r > 0 and terminos else ""
@@ -98,12 +106,11 @@ if "coefs" in st.session_state:
 
     st.subheader("Evaluar el polinomio")
     st.caption(f"Rango de interpolación con mayor grado de precisión: [{x_min}, {x_max}]")
-    xp = st.number_input("Valor a interpolar (x)")
+    xp = st.number_input("Valor a interpolar (x)", value=0.0, step=1e-2, format="%.9f")
 
     if st.button("Evaluar"):
             resultado = np.polyval(coefs, xp)
             st.success(f"P({xp}) = {resultado}")
-
             fig, ax = plt.subplots()
             ax.plot(x_vals, y_vals)
             ax.scatter(x_guardado, y_guardado)
@@ -112,6 +119,12 @@ if "coefs" in st.session_state:
             ax.set_xlabel("x")
             ax.set_ylabel("y")
             st.pyplot(fig)
+            #error relativo
+            if xp != 0:
+                f_real = datos["f"](xp)
+                error = abs((f_real - resultado) / f_real) * 100
+                st.info(f"Error relativo: {error:.9f}%")
+            
 
     st.divider()
     if st.button("Limpiar"):

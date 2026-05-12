@@ -1,5 +1,5 @@
 import streamlit as st
-
+#Para iniciar : source .venv/bin/activate && streamlit run Inicio.py
 st.set_page_config(page_title="Interpolacion 2026", page_icon="images/Logo.ico", layout="centered")
 
 st.title("Métodos de Interpolación")

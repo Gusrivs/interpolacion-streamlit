@@ -66,19 +66,14 @@ def parsear_funcion(expr_str: str):
 
 
 def evaluar_funcion(expr, xval: float):
-    """Evalúa una expresión sympy en un punto numérico."""
     x = sp.Symbol('x')
     try:
-        return float(expr.subs(x, xval).evalf())
+        return float(expr.subs(x, xval).evalf(15))
     except Exception:
         return None
 
 
 def generar_puntos(expr, a: float, b: float, n: int):
-    """
-    Genera n puntos equiespaciados en [a, b] evaluando expr.
-    Retorna (xs, ys) como listas de floats.
-    """
     xs = np.linspace(a, b, n)
     ys = []
     for xi in xs:
@@ -90,26 +85,20 @@ def generar_puntos(expr, a: float, b: float, n: int):
 
 
 def entrada_funcion_con_teclado(key_prefix: str = "func"):
-
     a, b, n = 0.0, 5.0, 5
-
     def al_cambiar_ejemplo():
         nueva_seleccion = st.session_state[f"{key_prefix}_selector_raw"]
         if nueva_seleccion:
             st.session_state.func_str = nueva_seleccion
-
     resultado = {
         "expr": None, "expr_str": "",
         "x_vals": None, "y_vals": None,
         "a": None, "b": None, "n": None,
         "valida": False
     }
-
     st.markdown("#### Configuración de la Función")
-
     # 1. Organización en pestañas
     tab_teclado, tab_ejemplos = st.tabs([" Teclado Visual", "📚 Ejemplos"])
-
     with tab_ejemplos:
         st.selectbox(
             "Seleccioná una función de ejemplo",
@@ -117,63 +106,48 @@ def entrada_funcion_con_teclado(key_prefix: str = "func"):
             key=f"{key_prefix}_selector_raw",
             on_change=al_cambiar_ejemplo # <--- LA SOLUCIÓN
         )
-
     with st.expander("Teclado ", expanded=True):
         render_teclado()
-
         def actualizar_desde_manual():
             key_manual = f"{key_prefix}_manual"
             if key_manual in st.session_state:
                 st.session_state.func_str = st.session_state[key_manual]
-
         st.text_input(
             "Edición manual (escribe y presiona Enter):",
             value=st.session_state.get('func_str', ""),
             key=f"{key_prefix}_manual",
             on_change=actualizar_desde_manual
         )
-
     expr_str = st.session_state.get('func_str', "")
-
     if expr_str:
         expr, error = parsear_funcion(expr_str)
-
         if error:
             st.error(f"⚠️ {error}")
             return resultado
-
         st.write("**Vista previa matemática:**")
         st.latex(f"f(x) = {sp.latex(expr)}")
-
         resultado["expr"] = expr
         resultado["expr_str"] = expr_str
-
         st.markdown("---")
         st.markdown("####  Parámetros para los puntos")
-
-        col1, col2, col3 = st.columns(3)
-        with col1: a = st.number_input("Inicio (a)", value=0.0, key=f"{key_prefix}_a")
-        with col2: b = st.number_input("Fin (b)", value=5.0, key=f"{key_prefix}_b")
-        with col3: n = int(st.number_input("Nº de Puntos", min_value=2, max_value=20, value=5, key=f"{key_prefix}_n"))
-
+        n = int(st.number_input("Nº de Puntos", min_value=2, max_value=20, value=5, key=f"{key_prefix}_n"))
+        a = 0
+        b = 5
         xs_base = np.linspace(a, b, n)
         xs_personalizados = []
-
     # --- AJUSTE DE VALORES X ---
-    st.write("✍️ **Ajusta los valores de X si lo deseas:**")
+    st.write("**Valores de X:**")
     xs_base = np.linspace(a, b, n)
     cols_x = st.columns(min(n, 5))
     xs_personalizados = []
-
     for i in range(n):
         with cols_x[i % 5]:
             # Aseguramos que el valor inicial sea float para evitar conflictos
             val_x = st.number_input(f"x_{i}", value=float(xs_base[i]), key=f"{key_prefix}_xi_{i}")
             xs_personalizados.append(val_x)
-
     # --- BOTÓN DE ACCIÓN CON PROTECCIÓN ---
     # Usamos .get() para evitar el KeyError/TypeError si la llave no existe aún
-    boton_presionado = st.button("🚀 Generar Tabla y Validar Puntos", use_container_width=True)
+    boton_presionado = st.button("Generar Tabla y Validar Puntos", use_container_width=True)
     ya_estaba_listo = st.session_state.get(f"{key_prefix}_puntos_listos", False)
 
     if boton_presionado or ya_estaba_listo:
@@ -192,10 +166,11 @@ def entrada_funcion_con_teclado(key_prefix: str = "func"):
 
             df = pd.DataFrame({"x": xs_personalizados, "f(x)": ys})
 
-            st.success("✅ Puntos cargados correctamente")
+            st.success("Puntos cargados correctamente")
             st.table(df)
 
             resultado.update({
+                "f" : lambda xval: evaluar_funcion(expr, xval),
                 "expr": expr,
                 "expr_str": expr_str,
                 "x_vals": xs_personalizados,
