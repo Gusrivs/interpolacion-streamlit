@@ -246,6 +246,8 @@ if "coefs" in st.session_state:
         xp, err_xp = parsear_valor(xp_str)
         if err_xp:
             st.error(f"⚠️ {err_xp}")
+        elif xp < x_min or xp > x_max:
+         st.error(f"⚠️ xₚ = {xp} está fuera del rango de interpolación [{x_min}, {x_max}].")
         else:
             resultado = evaluar_newton(x_g, coefs, xp)
             st.success(f"P({xp_str}) = {resultado}")

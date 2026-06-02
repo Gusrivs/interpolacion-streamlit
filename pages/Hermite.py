@@ -23,10 +23,14 @@ if modo == "Cargar desde Excel":
         df = pd.read_excel(archivo)
         x = df["x"].tolist()
         y = df["y"].tolist()
-        # Convertimos la columna 'dy' al formato de diccionario {i: {1: valor}}
-        derivadas = {i: {1: row["dy"]} for i, row in df.iterrows() if not pd.isna(row["dy"])}
+        if "dy" in df.columns:
+            derivadas = {i: {1: row["dy"]} for i, row in df.iterrows() if not pd.isna(row["dy"])}
+        else:
+            st.warning("⚠️ El archivo no tiene columna 'dy'. Se asumirá que no hay derivadas ingresadas.")
+            derivadas = {i: {} for i in range(len(df))}
         n = len(x)
         st.success(f"{n} puntos cargados")
+
 if modo == "Manual":
     n = int(st.number_input("Cantidad de puntos", min_value=2, step=1, value=2, key=f"n_{st.session_state['reset']}"))
     nd = int(st.number_input("Orden máximo de derivada disponible", min_value=1, step=1, value=1,key=f"nd_{st.session_state['reset']}"))
@@ -215,8 +219,12 @@ if st.button("Calcular"):
     elif len(set(x)) != len(x):
         st.error("Todos los puntos deben tener x distintos.")
     else:
-        # IMPORTANTE: Pasar 'derivadas', no 'dy'
-        z, Q = tabla_hermite(x, y, derivadas) 
+        # Ordenar por x
+        indices = sorted(range(len(x)), key=lambda i: x[i])
+        x = [x[i] for i in indices]
+        y = [y[i] for i in indices]
+        derivadas = {nuevo: derivadas[viejo] for nuevo, viejo in enumerate(indices)}
+        z, Q = tabla_hermite(x, y, derivadas)
         st.session_state["z"] = z
         st.session_state["Q"] = Q
         st.session_state["x"] = x

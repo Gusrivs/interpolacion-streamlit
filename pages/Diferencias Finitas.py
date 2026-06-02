@@ -132,37 +132,42 @@ else:
         st.warning(f"⚠️ s = {s_preview:.3f}. Bessel es más preciso cuando 0.25 ≤ s ≤ 0.75.")
 
 if st.button("Evaluar"):
-    try:
-        if metodo == "Stirling":
-            resultado = evaluar_stirling(T, x_g, h_g, xp)
-            m = n_g // 2
-        else:
-            resultado = evaluar_bessel(T, x_g, h_g, xp)
-            m = n_g // 2 - 1
+    x_min = min(x_g)
+    x_max = max(x_g)
+    if xp < x_min or xp > x_max:
+        st.error(f"⚠️ xₚ = {xp} está fuera del rango de interpolación [{x_min}, {x_max}].")
+    else:
+        try:
+            if metodo == "Stirling":
+                resultado = evaluar_stirling(T, x_g, h_g, xp)
+                m = n_g // 2
+            else:
+                resultado = evaluar_bessel(T, x_g, h_g, xp)
+                m = n_g // 2 - 1
 
-        s_val = (xp - x_g[m]) / h_g
-        st.success(f"P({xp}) ≈ {resultado:.6f}")
-        st.caption(f"s = (xₚ − x_central) / h = ({xp} − {x_g[m]:.4f}) / {h_g:.4f} = {s_val:.4f}")
+            s_val = (xp - x_g[m]) / h_g
+            st.success(f"P({xp}) ≈ {resultado:.6f}")
+            st.caption(f"s = (xₚ − x_central) / h = ({xp} − {x_g[m]:.4f}) / {h_g:.4f} = {s_val:.4f}")
 
-        x_vals = np.linspace(min(x_g), max(x_g), 300)
-        if metodo == "Stirling":
-            y_vals = [evaluar_stirling(T, x_g, h_g, xi) for xi in x_vals]
-        else:
-            y_vals = [evaluar_bessel(T, x_g, h_g, xi) for xi in x_vals]
+            x_vals = np.linspace(x_min, x_max, 300)
+            if metodo == "Stirling":
+                y_vals = [evaluar_stirling(T, x_g, h_g, xi) for xi in x_vals]
+            else:
+                y_vals = [evaluar_bessel(T, x_g, h_g, xi) for xi in x_vals]
 
-        fig, ax = plt.subplots()
-        ax.plot(x_vals, y_vals, label="Polinomio interpolante")
-        ax.scatter(x_g, y_g, zorder=5, label="Puntos dados")
-        ax.scatter(xp, resultado, color="red", zorder=6,
-                   label=f"P({xp}) = {resultado:.4f}")
-        ax.set_title(f"Interpolación por Diferencias Finitas ({metodo})")
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.legend()
-        st.pyplot(fig)
+            fig, ax = plt.subplots()
+            ax.plot(x_vals, y_vals, label="Polinomio interpolante")
+            ax.scatter(x_g, y_g, zorder=5, label="Puntos dados")
+            ax.scatter(xp, resultado, color="red", zorder=6,
+                       label=f"P({xp}) = {resultado:.4f}")
+            ax.set_title(f"Interpolación por Diferencias Finitas ({metodo})")
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.legend()
+            st.pyplot(fig)
 
-    except Exception as e:
-        st.error(f"Error al evaluar: {e}")
+        except Exception as e:
+            st.error(f"Error al evaluar: {e}")
 
 st.divider()
 if st.button("Limpiar"):

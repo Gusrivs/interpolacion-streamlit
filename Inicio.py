@@ -102,7 +102,7 @@ if enviado:
         st.page_link("pages/Diferencias Finitas.py", label="📕 Diferencias Finitas")
 
     with col3:
-        st.page_link("pages/Spline grado cero.py",       label="📒 Spline grado cero")
+        st.page_link("pages/Spline Grado cero.py",       label="📒 Spline grado cero")
         st.page_link("pages/Spline Lineal.py",       label="📒 Spline Lineal")
         st.page_link("pages/Spline Cuadratica.py",   label="📒 Spline Cuadrático")
         st.page_link("pages/Spline Cubico.py",      label="📒 Spline Cúbico")
