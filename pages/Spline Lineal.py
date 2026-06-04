@@ -53,8 +53,8 @@ def evaluar_spline(tramos, xp):
     return None
 
 if st.button("Calcular"):
-    if len(x) < 3:
-        st.error("⚠️ No hay datos ingresados.")
+    if len(x) < 2:
+        st.error("⚠️ Se necesitan al menos 2 puntos.")
     elif len(set(x)) != len(x):
         st.error("Todos los puntos deben tener x distintos.")
     else:

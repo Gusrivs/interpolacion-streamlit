@@ -33,12 +33,10 @@ if modo == "Manual":
     for i in range(n):
         st.markdown(f"**Punto {i}**")
         col1, col2 = st.columns(2)
-        # El punto i se bloquea si el punto anterior (i-1) aún tiene x=0.0 y no es el primero
-        bloqueado = i > 0 and st.session_state.get(f"x{i-1}_{st.session_state['reset']}", 0.0) == 0.0
         with col1:
-            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0, disabled=bloqueado)
+            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
         with col2:
-            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0, disabled=bloqueado)
+            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
         x.append(float(xi))
         y.append(float(yi))
 
@@ -69,7 +67,10 @@ def spline_cuadratica(x, y):
         eq += 1
     A[eq][0] = 1
     b_vec[eq] = 0
-    coefs = np.linalg.solve(A, b_vec)
+    try:
+        coefs = np.linalg.solve(A, b_vec)
+    except np.linalg.LinAlgError:
+        return None
     splines = []
     for i in range(m):
         a = coefs[3 * i]
@@ -90,18 +91,20 @@ def evaluar_spline(splines, xp):
 if st.button("Calcular"):
     if len(x) < 3:
         st.error("⚠️ Se necesitan al menos 3 puntos.")
-    elif len(set(x)) != len(x):
-        st.error("⚠️ Todos los puntos deben tener x distintos.")
+    elif len(set(round(xi, 10) for xi in x)) != len(x):
+         st.error("⚠️ Todos los puntos deben tener x distintos.")
     else:
         # Ordenar por x
         pares = sorted(zip(x, y), key=lambda p: p[0])
         x_ord = [p[0] for p in pares]
         y_ord = [p[1] for p in pares]
         splines = spline_cuadratica(x_ord, y_ord)
-        st.session_state["splines_q"] = splines
-        st.session_state["x_q"] = x_ord
-        st.session_state["y_q"] = y_ord
-
+        if splines is None:
+            st.error("⚠️ El sistema no tiene solución. Verificá que los puntos no sean colineales o estén mal ingresados.")
+        else:
+            st.session_state["splines_q"] = splines
+            st.session_state["x_q"] = x_ord
+            st.session_state["y_q"] = y_ord
 if "splines_q" in st.session_state:
     splines = st.session_state["splines_q"]
     x_g = st.session_state["x_q"]

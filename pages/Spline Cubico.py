@@ -33,11 +33,10 @@ if modo == "Manual":
     for i in range(n):
         st.markdown(f"**Punto {i}**")
         col1, col2 = st.columns(2)
-        bloqueado = i > 0 and st.session_state.get(f"x{i-1}_{st.session_state['reset']}", 0.0) == 0.0
         with col1:
-            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0, disabled=bloqueado)
+            xi = st.number_input(f"x{i}", key=f"x{i}_{st.session_state['reset']}", value=0.0)
         with col2:
-            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0, disabled=bloqueado)
+            yi = st.number_input(f"y{i}", key=f"y{i}_{st.session_state['reset']}", value=0.0)
         x.append(float(xi))
         y.append(float(yi))
 
@@ -56,7 +55,10 @@ def spline_cubico_natural(x, y):
         if i < size - 1:
             A[i][i + 1] = h[i + 1]
         b_vec[i] = 6 * ((y[i + 2] - y[i + 1]) / h[i + 1] - (y[i + 1] - y[i]) / h[i])
-    M_interior = np.linalg.solve(A, b_vec) if size > 0 else np.array([])
+    try:
+        M_interior = np.linalg.solve(A, b_vec) if size > 0 else np.array([])
+    except np.linalg.LinAlgError:
+        return None, None
     M = np.concatenate([[0], M_interior, [0]])
     splines = []
     for i in range(m):
@@ -79,7 +81,7 @@ def evaluar_spline(splines, xp):
 if st.button("Calcular"):
     if len(x) < 3:
         st.error("⚠️ Se necesitan al menos 3 puntos.")
-    elif len(set(x)) != len(x):
+    elif len(set(round(xi, 10) for xi in x)) != len(x):
         st.error("⚠️ Todos los puntos deben tener x distintos.")
     else:
         # Ordenar por x
@@ -87,10 +89,13 @@ if st.button("Calcular"):
         x_ord = [p[0] for p in pares]
         y_ord = [p[1] for p in pares]
         splines, M = spline_cubico_natural(x_ord, y_ord)
-        st.session_state["splines_c"] = splines
-        st.session_state["M_c"] = M
-        st.session_state["x_c"] = x_ord
-        st.session_state["y_c"] = y_ord
+        if splines is None:
+            st.error("⚠️ El sistema no tiene solución. Verificá que los puntos no sean colineales o estén mal ingresados.")
+        else:
+            st.session_state["splines_c"] = splines
+            st.session_state["M_c"] = M
+            st.session_state["x_c"] = x_ord
+            st.session_state["y_c"] = y_ord
 
 if "splines_c" in st.session_state:
     splines = st.session_state["splines_c"]
