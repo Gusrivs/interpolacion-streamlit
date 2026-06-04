@@ -73,9 +73,10 @@ if "tramos" in st.session_state:
 
     st.subheader("Polinomios por tramo")
     for i, (x0, x1, a, b) in enumerate(tramos):
-        signo = "+" if b >= 0 else "-"
-        st.code(f"S{i}(x) = {a} {signo} {abs(b):.4f}·(x - {x0}),   x ∈ [{x0}, {x1}]")
-
+        independiente = round(a - b * x0, 4)
+        signo_b = "+" if b >= 0 else "-"
+        signo_ind = "+" if independiente >= 0 else "-"
+        st.code(f"S{i}(x) = {round(b,4)}x  {signo_ind}  {abs(independiente)},   x ∈ [{x0}, {x1}]")
     st.subheader("Tabla de coeficientes")
     filas = [{"Tramo": f"S{i}", "x_i": x0, "x_i+1": x1, "a": a, "b": round(b, 6)}
              for i, (x0, x1, a, b) in enumerate(tramos)]

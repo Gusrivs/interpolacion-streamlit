@@ -112,11 +112,13 @@ if "splines_q" in st.session_state:
 
     st.subheader("Polinomios por tramo")
     for i, (a, b, c, xi, xi1) in enumerate(splines):
-        signo_b = "+" if b >= 0 else "-"
-        signo_c = "+" if c >= 0 else "-"
-        st.code(
-            f"S{i}(x) = {round(a,4)}·(x - {xi})²  {signo_b}  {abs(round(b,4))}·(x - {xi})  {signo_c}  {abs(round(c,4))},   x ∈ [{xi}, {xi1}]"
-        )
+        p = np.poly1d([a, b - 2*a*xi, a*xi**2 - b*xi + c])
+        coef_a = round(p[2], 4)
+        coef_b = round(p[1], 4)
+        coef_c = round(p[0], 4)
+        signo_b = "+" if coef_b >= 0 else "-"
+        signo_c = "+" if coef_c >= 0 else "-"
+        st.code(f"S{i}(x) = {coef_a}x²  {signo_b}  {abs(coef_b)}x  {signo_c}  {abs(coef_c)},   x ∈ [{xi}, {xi1}]")
 
     st.subheader("Tabla de coeficientes")
     filas = [{"Tramo": f"S{i}", "x_i": xi, "x_i+1": xi1,
