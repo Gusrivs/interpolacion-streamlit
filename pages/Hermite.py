@@ -259,7 +259,9 @@ if "z" in st.session_state:
             resultado = evaluar_hermite(z, Q, xp)
             st.success(f"H({xp}) = {resultado}")
 
-            x_vals = np.linspace(x_min, x_max, 200)
+            x_min_g = min(x_min, xp)
+            x_max_g = max(x_max, xp)
+            x_vals = np.linspace(x_min_g, x_max_g, 200)
             y_vals = [evaluar_hermite(z, Q, xi) for xi in x_vals]
 
             fig, ax = plt.subplots()

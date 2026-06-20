@@ -132,11 +132,6 @@ else:
         st.warning(f"⚠️ s = {s_preview:.3f}. Bessel es más preciso cuando 0.25 ≤ s ≤ 0.75.")
 
 if st.button("Evaluar"):
-    x_min = min(x_g)
-    x_max = max(x_g)
-    if xp < x_min or xp > x_max:
-        st.error(f"⚠️ xₚ = {xp} está fuera del rango de interpolación [{x_min}, {x_max}].")
-    else:
         try:
             if metodo == "Stirling":
                 resultado = evaluar_stirling(T, x_g, h_g, xp)
@@ -149,7 +144,9 @@ if st.button("Evaluar"):
             st.success(f"P({xp}) ≈ {resultado:.6f}")
             st.caption(f"s = (xₚ − x_central) / h = ({xp} − {x_g[m]:.4f}) / {h_g:.4f} = {s_val:.4f}")
 
-            x_vals = np.linspace(x_min, x_max, 300)
+            x_min_g = min(min(x_g), xp)
+            x_max_g = max(max(x_g), xp)
+            x_vals = np.linspace(x_min_g, x_max_g, 300)
             if metodo == "Stirling":
                 y_vals = [evaluar_stirling(T, x_g, h_g, xi) for xi in x_vals]
             else:

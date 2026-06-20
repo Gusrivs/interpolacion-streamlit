@@ -158,8 +158,7 @@ if "coefs" in st.session_state:
 
     x_min = min(x_guardado)
     x_max = max(x_guardado)
-    x_vals = np.linspace(x_min, x_max, 100)
-    y_vals = np.polyval(coefs, x_vals)
+
 
     st.subheader("Evaluar el polinomio")
     st.caption(f"Rango de interpolación con mayor grado de precisión: [{x_min}, {x_max}]")
@@ -173,8 +172,6 @@ if "coefs" in st.session_state:
         xp, err_xp = parsear_valor(xp_str)
         if err_xp:
             st.error(f"⚠️ {err_xp}")
-        elif xp < x_min or xp > x_max:
-            st.error(f"⚠️ xₚ = {xp} está fuera del rango de interpolación [{x_min}, {x_max}].")
         else:
             resultado = np.polyval(coefs, xp)
             st.success(f"P({xp_str}) = {resultado}")
@@ -185,10 +182,16 @@ if "coefs" in st.session_state:
                     err = error_relativo(f_real, resultado)
                     st.info(f"f({xp_str}) real = {f_real:.9f} | Error relativo: {err:.6f}%")
 
+            x_min_g = min(min(x_guardado), xp)
+            x_max_g = max(max(x_guardado), xp)
+            x_vals = np.linspace(x_min_g, x_max_g, 200)
+            y_vals = np.polyval(coefs, x_vals)
+
             fig, ax = plt.subplots()
             ax.plot(x_vals, y_vals)
             ax.scatter(x_guardado, y_guardado)
             ax.scatter(xp, resultado)
+
             ax.set_title("Polinomio de Interpolación (Lagrange)")
             ax.set_xlabel("x")
             ax.set_ylabel("y")
