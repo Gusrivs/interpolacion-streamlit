@@ -48,13 +48,13 @@ def spline_grado_cero(x, y):
     return tramos
 
 
-def evaluar_spline(tramos, xp):
+def evaluar_spline(tramos, xp, y_ultimo):
     for (x0, x1, a) in tramos:
         if x0 <= xp < x1:
             return a
-    # Si xp es exactamente el último punto
+    # Si xp es exactamente el último punto, usar el último y ingresado
     if xp == tramos[-1][1]:
-        return tramos[-1][2]
+        return y_ultimo
     return None
 
 
@@ -89,7 +89,7 @@ if "tramos_0" in st.session_state:
     st.subheader("Evaluar el spline")
     xp = st.number_input("Valor a interpolar (x)", key=f"xp_{st.session_state['reset']}")
     if st.button("Evaluar"):
-        resultado = evaluar_spline(tramos, xp)
+        resultado = evaluar_spline(tramos, xp, y_g[-1])
         if resultado is None:
             st.error(f"⚠️ xₚ = {xp} está fuera del rango [{x_g[0]}, {x_g[-1]}].")
         else:

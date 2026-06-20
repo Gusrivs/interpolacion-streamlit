@@ -89,6 +89,10 @@ if st.button("Calcular tabla"):
 if "T" not in st.session_state:
     st.stop()
 
+if metodo == "Bessel" and n < 4:
+    st.error("⚠️ El método de Bessel requiere al menos 4 puntos.")
+    st.stop()
+
 T   = st.session_state["T"]
 x_g = st.session_state["x_g"]
 y_g = st.session_state["y_g"]
