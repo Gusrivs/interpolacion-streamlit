@@ -122,7 +122,8 @@ def entrada_funcion_con_teclado(key_prefix: str = "func"):
     if expr_str:
         expr, error = parsear_funcion(expr_str)
         if error:
-            st.error(f"⚠️ {error}")
+            #st.error(f"⚠️ {error}")
+            st.caption("✏️ Completa la función para ver la vista previa…")
             return resultado
         st.write("**Vista previa matemática:**")
         st.latex(f"f(x) = {sp.latex(expr)}")
