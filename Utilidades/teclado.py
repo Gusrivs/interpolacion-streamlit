@@ -23,9 +23,6 @@ def render_teclado():
            queden parejos y pegados, sin que el ancho varíe entre filas */
         div[data-testid="stHorizontalBlock"] {
             gap: 4px;
-            /* Streamlit apila las columnas verticalmente en pantallas
-               angostas (responsive por defecto). Esto lo evita: las
-               7 columnas se mantienen siempre en una sola fila. */
             flex-wrap: nowrap !important;
             flex-direction: row !important;
         }

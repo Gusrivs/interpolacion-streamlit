@@ -2,12 +2,31 @@ import streamlit as st
 #Para iniciar : source .venv/bin/activate && streamlit run Inicio.py
 st.set_page_config(page_title="Interpolacion 2026", page_icon="images/Logo.ico", layout="centered")
 
-st.title("Métodos de Interpolación")
-st.success("Nota: aún estamos trabajando en algunas implementaciones, ¡pronto estarán disponibles todas!")
-st.image("images/Portada.png", width=550)
+st.markdown("<h1 style='text-align: center;'>Métodos de Interpolación</h1>", unsafe_allow_html=True)
+import base64
 
+def imagen_centrada(ruta, ancho=350):
+    with open(ruta, "rb") as f:
+        datos = base64.b64encode(f.read()).decode()
+    st.markdown(
+        f"""
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <img src="data:image/png;base64,{datos}" width="{ancho}">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-st.write("Responde el siguiente formulario y te sugeriremos el método más adecuado para tu caso.")
+imagen_centrada("images/Portada.png", ancho=350)
+
+st.markdown(
+    "<p style='text-align: center;'>Una herramienta interactiva para explorar y comparar distintos métodos de interpolación numérica.</p>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<p style='text-align: center;'>Responde el siguiente formulario y te sugeriremos el método más adecuado para tu caso.</p>",
+    unsafe_allow_html=True
+)
 st.divider()
 
 # --- Formulario ---
@@ -17,24 +36,28 @@ with st.form("formulario"):
     conoce_derivada = st.radio(
         "¿Conoces el valor de la derivada en los puntos?",
         ["Sí", "No"],
+        index=None,
         horizontal=True
     )
 
     espaciado_uniforme = st.radio(
         "¿Los puntos están igualmente espaciados (mismo Δx entre todos)?",
         ["Sí", "No"],
+        index=None,
         horizontal=True
     )
 
     quiere_suavidad = st.radio(
         "¿Necesitas que la curva sea suave entre cada par de puntos (sin quiebres)?",
         ["Sí", "No"],
+        index=None,
         horizontal=True
     )
 
     cantidad_puntos = st.radio(
         "¿Cuántos puntos tienes aproximadamente?",
         ["Pocos (2 - 5)", "Varios (6 o más)"],
+        index=None,
         horizontal=True
     )
 
@@ -42,8 +65,13 @@ with st.form("formulario"):
 
 # --- Lógica de sugerencia ---
 if enviado:
-    st.divider()
-    st.subheader("Método sugerido")
+
+    if None in (conoce_derivada, espaciado_uniforme, quiere_suavidad, cantidad_puntos):
+        st.warning("⚠️ Por favor responde todas las preguntas antes de continuar.")
+    else:
+        st.divider()
+        st.subheader("Método sugerido") 
+
 
     if conoce_derivada == "Sí":
         metodo     = "Hermite"
