@@ -79,6 +79,76 @@ def evaluar_bessel(T, x, h, xp):
         resultado += coef4 * (T[m - 2][4] + T[m - 1][4]) / 2
     return resultado
 
+# ---------- NUEVO: construcción simbólica del polinomio (igual idea que en Hermite) ----------
+
+def poly_stirling(T, x, h):
+    """Construye el polinomio de Stirling como np.poly1d en función de x.
+    Usa s = (x - x[m]) / h como polinomio simbólico, en vez de un número,
+    y acumula los mismos términos que evaluar_stirling."""
+    n = len(x)
+    m = n // 2
+    s = np.poly1d([1.0 / h, -x[m] / h])  # s(x) = (x - x[m]) / h
+
+    resultado = np.poly1d([T[m][0]])
+    if m >= 1 and m - 1 >= 0:
+        resultado += s * ((T[m][1] + T[m - 1][1]) / 2)
+    if m - 1 >= 0 and n - 2 > m - 1:
+        resultado += (s**2 / math.factorial(2)) * T[m - 1][2]
+    if m - 1 >= 1 and m - 2 >= 0:
+        coef3 = s * (s**2 - 1) / math.factorial(3)
+        resultado += coef3 * ((T[m - 1][3] + T[m - 2][3]) / 2)
+    if m - 2 >= 0 and n - 4 > m - 2:
+        coef4 = (s**2) * (s**2 - 1) / math.factorial(4)
+        resultado += coef4 * T[m - 2][4]
+    if m - 2 >= 1 and m - 3 >= 0:
+        coef5 = s * (s**2 - 1) * (s**2 - 4) / math.factorial(5)
+        resultado += coef5 * ((T[m - 2][5] + T[m - 3][5]) / 2)
+    return resultado
+
+def poly_bessel(T, x, h):
+    """Construye el polinomio de Bessel como np.poly1d en función de x.
+    Mismo enfoque que poly_stirling, pero con el patrón de Bessel."""
+    n = len(x)
+    m = n // 2 - 1
+    s = np.poly1d([1.0 / h, -x[m] / h])  # s(x) = (x - x[m]) / h
+
+    resultado = np.poly1d([(T[m][0] + T[m + 1][0]) / 2])
+    resultado += (s - 0.5) * T[m][1]
+    if m - 1 >= 0:
+        coef2 = s * (s - 1) / math.factorial(2)
+        resultado += coef2 * ((T[m - 1][2] + T[m][2]) / 2)
+    if m - 1 >= 0:
+        coef3 = (s - 0.5) * s * (s - 1) / math.factorial(3)
+        resultado += coef3 * T[m - 1][3]
+    if m - 2 >= 0 and m - 1 >= 0:
+        coef4 = s * (s - 1) * (s + 1) * (s - 2) / math.factorial(4)
+        resultado += coef4 * ((T[m - 2][4] + T[m - 1][4]) / 2)
+    return resultado
+
+def formato_polinomio(poly):
+    """Formatea un np.poly1d como string 'P(x) = ...', mismo estilo que
+    formato_polinomio_reducido en la app de Hermite."""
+    grado = poly.order
+    terminos = []
+    for exp in range(grado, -1, -1):
+        c = round(poly.coef[grado - exp], 4)
+        if abs(c) < 1e-10:
+            continue
+        if not terminos:
+            signo = "-" if c < 0 else ""
+        else:
+            signo = " + " if c > 0 else " - "
+        val = abs(c)
+        if exp == 0:
+            terminos.append(f"{signo}{val}")
+        elif exp == 1:
+            terminos.append(f"{signo}{val}x" if val != 1 else f"{signo}x")
+        else:
+            terminos.append(f"{signo}{val}x^{exp}" if val != 1 else f"{signo}x^{exp}")
+    return "P(x) = " + "".join(terminos) if terminos else "P(x) = 0"
+
+# ---------- FIN de lo nuevo ----------
+
 if st.button("Calcular tabla"):
     T = tabla_diferencias(y)
     st.session_state["T"]   = T
@@ -104,11 +174,17 @@ superindices = {1:'¹', 2:'²', 3:'³', 4:'⁴', 5:'⁵', 6:'⁶', 7:'⁷', 8:'�
 st.subheader("Tabla de diferencias finitas")
 col_names = ["i", "xᵢ", "yᵢ"] + [f"Δ{superindices.get(j, str(j))}y" for j in range(1, n_g)]
 
+def limpiar_cero(valor):
+    """Evita mostrar -0.0 cuando el valor es matemáticamente cero
+    (ruido de redondeo de punto flotante en restas sucesivas)."""
+    valor = round(float(valor), 6)
+    return 0.0 if valor == 0 else valor
+
 filas = []
 for i in range(n_g):
-    fila = [i, round(x_g[i], 4), round(T[i][0], 6)]
+    fila = [i, round(x_g[i], 4), limpiar_cero(T[i][0])]
     for j in range(1, n_g):
-        fila.append(round(float(T[i][j]), 6) if i + j < n_g else "")
+        fila.append(limpiar_cero(T[i][j]) if i + j < n_g else "")
     filas.append(fila)
 
 df = pd.DataFrame(filas, columns=col_names).astype(object)
@@ -120,6 +196,15 @@ if metodo == "Stirling":
 else:
     m = n_g // 2 - 1
     st.info(f"Bessel: interpolación entre  x_{m} = {x_g[m]:.4f}  y  x_{m+1} = {x_g[m+1]:.4f}")
+
+# ---------- NUEVO: mostrar el polinomio interpolante construido ----------
+st.subheader("Polinomio interpolante")
+if metodo == "Stirling":
+    poly_actual = poly_stirling(T, x_g, h_g)
+else:
+    poly_actual = poly_bessel(T, x_g, h_g)
+st.code(formato_polinomio(poly_actual))
+# ---------- FIN de lo nuevo ----------
 
 st.subheader("Evaluar el polinomio")
 xp = st.number_input("Valor a interpolar (xₚ)", key=f"xp_{r}")
