@@ -23,6 +23,15 @@ with col3:
 
 x = [x0 + i * h for i in range(n)]
 
+# --- Validación de paridad por método (warning temprano, antes de ingresar y) ---
+if metodo_preview := st.session_state.get(f"metodo_{r}", "Stirling"):
+    if metodo_preview == "Stirling" and n % 2 == 0:
+        st.warning(
+            f"⚠️ Con n = {n} (par) no hay un nodo central único. "
+            f"Stirling usará x_{n // 2} = {x[n // 2]:.4f} como centro, "
+            f"que está desplazado. Considera usar Bessel."
+        )
+
 st.write("Ingrese los valores de y:")
 cols = st.columns(n)
 y = []
@@ -33,6 +42,15 @@ for i in range(n):
 
 metodo = st.selectbox("Método", ["Stirling", "Bessel"], key=f"metodo_{r}")
 
+# --- Validación de paridad por método (definitiva, tras seleccionar método) ---
+if metodo == "Stirling" and n % 2 == 0:
+    st.warning(
+        f"⚠️ Con n = {n} (par) no hay un nodo central único. "
+        f"Stirling usará x_{n // 2} = {x[n // 2]:.4f} como centro, "
+        f"que está desplazado. Considera usar Bessel."
+    )
+
+
 def tabla_diferencias(y):
     n = len(y)
     T = np.zeros((n, n))
@@ -41,6 +59,7 @@ def tabla_diferencias(y):
         for i in range(n - j):
             T[i][j] = T[i + 1][j - 1] - T[i][j - 1]
     return T
+
 
 def evaluar_stirling(T, x, h, xp):
     n = len(x)
@@ -62,6 +81,7 @@ def evaluar_stirling(T, x, h, xp):
         resultado += coef5 * (T[m - 2][5] + T[m - 3][5]) / 2
     return resultado
 
+
 def evaluar_bessel(T, x, h, xp):
     n = len(x)
     m = n // 2 - 1
@@ -79,15 +99,11 @@ def evaluar_bessel(T, x, h, xp):
         resultado += coef4 * (T[m - 2][4] + T[m - 1][4]) / 2
     return resultado
 
-# ---------- NUEVO: construcción simbólica del polinomio (igual idea que en Hermite) ----------
 
 def poly_stirling(T, x, h):
-    """Construye el polinomio de Stirling como np.poly1d en función de x.
-    Usa s = (x - x[m]) / h como polinomio simbólico, en vez de un número,
-    y acumula los mismos términos que evaluar_stirling."""
     n = len(x)
     m = n // 2
-    s = np.poly1d([1.0 / h, -x[m] / h])  # s(x) = (x - x[m]) / h
+    s = np.poly1d([1.0 / h, -x[m] / h])
 
     resultado = np.poly1d([T[m][0]])
     if m >= 1 and m - 1 >= 0:
@@ -105,12 +121,11 @@ def poly_stirling(T, x, h):
         resultado += coef5 * ((T[m - 2][5] + T[m - 3][5]) / 2)
     return resultado
 
+
 def poly_bessel(T, x, h):
-    """Construye el polinomio de Bessel como np.poly1d en función de x.
-    Mismo enfoque que poly_stirling, pero con el patrón de Bessel."""
     n = len(x)
     m = n // 2 - 1
-    s = np.poly1d([1.0 / h, -x[m] / h])  # s(x) = (x - x[m]) / h
+    s = np.poly1d([1.0 / h, -x[m] / h])
 
     resultado = np.poly1d([(T[m][0] + T[m + 1][0]) / 2])
     resultado += (s - 0.5) * T[m][1]
@@ -125,9 +140,8 @@ def poly_bessel(T, x, h):
         resultado += coef4 * ((T[m - 2][4] + T[m - 1][4]) / 2)
     return resultado
 
+
 def formato_polinomio(poly):
-    """Formatea un np.poly1d como string 'P(x) = ...', mismo estilo que
-    formato_polinomio_reducido en la app de Hermite."""
     grado = poly.order
     terminos = []
     for exp in range(grado, -1, -1):
@@ -147,7 +161,6 @@ def formato_polinomio(poly):
             terminos.append(f"{signo}{val}x^{exp}" if val != 1 else f"{signo}x^{exp}")
     return "P(x) = " + "".join(terminos) if terminos else "P(x) = 0"
 
-# ---------- FIN de lo nuevo ----------
 
 if st.button("Calcular tabla"):
     T = tabla_diferencias(y)
@@ -163,6 +176,10 @@ if metodo == "Bessel" and n < 4:
     st.error("⚠️ El método de Bessel requiere al menos 4 puntos.")
     st.stop()
 
+if metodo == "Bessel" and n % 2 != 0:
+    st.error(f"⚠️ Bessel requiere un número par de puntos. Actualmente n = {n}.")
+    st.stop()
+
 T   = st.session_state["T"]
 x_g = st.session_state["x_g"]
 y_g = st.session_state["y_g"]
@@ -174,11 +191,11 @@ superindices = {1:'¹', 2:'²', 3:'³', 4:'⁴', 5:'⁵', 6:'⁶', 7:'⁷', 8:'�
 st.subheader("Tabla de diferencias finitas")
 col_names = ["i", "xᵢ", "yᵢ"] + [f"Δ{superindices.get(j, str(j))}y" for j in range(1, n_g)]
 
+
 def limpiar_cero(valor):
-    """Evita mostrar -0.0 cuando el valor es matemáticamente cero
-    (ruido de redondeo de punto flotante en restas sucesivas)."""
     valor = round(float(valor), 6)
     return 0.0 if valor == 0 else valor
+
 
 filas = []
 for i in range(n_g):
@@ -197,14 +214,12 @@ else:
     m = n_g // 2 - 1
     st.info(f"Bessel: interpolación entre  x_{m} = {x_g[m]:.4f}  y  x_{m+1} = {x_g[m+1]:.4f}")
 
-# ---------- NUEVO: mostrar el polinomio interpolante construido ----------
 st.subheader("Polinomio interpolante")
 if metodo == "Stirling":
     poly_actual = poly_stirling(T, x_g, h_g)
 else:
     poly_actual = poly_bessel(T, x_g, h_g)
 st.code(formato_polinomio(poly_actual))
-# ---------- FIN de lo nuevo ----------
 
 st.subheader("Evaluar el polinomio")
 xp = st.number_input("Valor a interpolar (xₚ)", key=f"xp_{r}")
@@ -221,39 +236,39 @@ else:
         st.warning(f"⚠️ s = {s_preview:.3f}. Bessel es más preciso cuando 0.25 ≤ s ≤ 0.75.")
 
 if st.button("Evaluar"):
-        try:
-            if metodo == "Stirling":
-                resultado = evaluar_stirling(T, x_g, h_g, xp)
-                m = n_g // 2
-            else:
-                resultado = evaluar_bessel(T, x_g, h_g, xp)
-                m = n_g // 2 - 1
+    try:
+        if metodo == "Stirling":
+            resultado = evaluar_stirling(T, x_g, h_g, xp)
+            m = n_g // 2
+        else:
+            resultado = evaluar_bessel(T, x_g, h_g, xp)
+            m = n_g // 2 - 1
 
-            s_val = (xp - x_g[m]) / h_g
-            st.success(f"P({xp}) ≈ {resultado:.6f}")
-            st.caption(f"s = (xₚ − x_central) / h = ({xp} − {x_g[m]:.4f}) / {h_g:.4f} = {s_val:.4f}")
+        s_val = (xp - x_g[m]) / h_g
+        st.success(f"P({xp}) ≈ {resultado:.6f}")
+        st.caption(f"s = (xₚ − x_central) / h = ({xp} − {x_g[m]:.4f}) / {h_g:.4f} = {s_val:.4f}")
 
-            x_min_g = min(min(x_g), xp)
-            x_max_g = max(max(x_g), xp)
-            x_vals = np.linspace(x_min_g, x_max_g, 300)
-            if metodo == "Stirling":
-                y_vals = [evaluar_stirling(T, x_g, h_g, xi) for xi in x_vals]
-            else:
-                y_vals = [evaluar_bessel(T, x_g, h_g, xi) for xi in x_vals]
+        x_min_g = min(min(x_g), xp)
+        x_max_g = max(max(x_g), xp)
+        x_vals = np.linspace(x_min_g, x_max_g, 300)
+        if metodo == "Stirling":
+            y_vals = [evaluar_stirling(T, x_g, h_g, xi) for xi in x_vals]
+        else:
+            y_vals = [evaluar_bessel(T, x_g, h_g, xi) for xi in x_vals]
 
-            fig, ax = plt.subplots()
-            ax.plot(x_vals, y_vals, label="Polinomio interpolante")
-            ax.scatter(x_g, y_g, zorder=5, label="Puntos dados")
-            ax.scatter(xp, resultado, color="red", zorder=6,
-                       label=f"P({xp}) = {resultado:.4f}")
-            ax.set_title(f"Interpolación por Diferencias Finitas ({metodo})")
-            ax.set_xlabel("x")
-            ax.set_ylabel("y")
-            ax.legend()
-            st.pyplot(fig)
+        fig, ax = plt.subplots()
+        ax.plot(x_vals, y_vals, label="Polinomio interpolante")
+        ax.scatter(x_g, y_g, zorder=5, label="Puntos dados")
+        ax.scatter(xp, resultado, color="red", zorder=6,
+                   label=f"P({xp}) = {resultado:.4f}")
+        ax.set_title(f"Interpolación por Diferencias Finitas ({metodo})")
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.legend()
+        st.pyplot(fig)
 
-        except Exception as e:
-            st.error(f"Error al evaluar: {e}")
+    except Exception as e:
+        st.error(f"Error al evaluar: {e}")
 
 st.divider()
 if st.button("Limpiar"):
